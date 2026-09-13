@@ -44,7 +44,7 @@ module PrismPorter
       end
 
       def chunk_collection?(value)
-        value.is_a?(Array) && !value.empty? && value.all? { |chunk| chunk.is_a?(Presentation::Chunk) }
+        value.is_a?(Array) && !value.empty? && value.all?(Presentation::Chunk)
       end
 
       def chunks_reconstruct?(value, full_presentation)

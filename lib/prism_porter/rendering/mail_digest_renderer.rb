@@ -19,17 +19,20 @@ module PrismPorter
       private
 
       def render_single(payload)
-        window = window(payload)
         entries = array(payload, "entries")
         validate_count(payload, entries)
-        lines = header(window, 1, integer(payload, "matched_count"))
-        entries.each_with_index do |entry, index|
-          evidence = hash(hash(entry, "evidence"), nil)
-          lines.concat(entry_lines(index + 1, evidence, payload.fetch("mailbox_id")))
-        end
+        lines = header(window(payload), 1, integer(payload, "matched_count"))
+        append_single_entries(lines, entries, payload.fetch("mailbox_id"))
         Domain::Presentation.new(text: lines.join("\n"))
       rescue KeyError
         raise InvalidArtifact, "single-mailbox digest is incomplete", cause: nil
+      end
+
+      def append_single_entries(lines, entries, mailbox_id)
+        entries.each_with_index do |entry, index|
+          evidence = hash(hash(entry, "evidence"), nil)
+          lines.concat(entry_lines(index + 1, evidence, mailbox_id))
+        end
       end
 
       def render_aggregate(payload)
@@ -48,7 +51,7 @@ module PrismPorter
       def header(window, mailbox_count, message_count)
         [
           "Mail digest",
-          "Period: #{window.fetch("since")} — #{window.fetch("before")}",
+          "Period: #{window.fetch('since')} — #{window.fetch('before')}",
           "Mailboxes: #{mailbox_count}",
           "Messages: #{message_count}",
           ""
@@ -57,8 +60,8 @@ module PrismPorter
 
       def entry_lines(position, evidence, source_account)
         [
-          "#{position}. #{text(evidence, "sender")} — #{text(evidence, "subject", allow_empty: true)}",
-          "   #{text(evidence, "received_at")} · #{source_account}"
+          "#{position}. #{text(evidence, 'sender')} — #{text(evidence, 'subject', allow_empty: true)}",
+          "   #{text(evidence, 'received_at')} · #{source_account}"
         ]
       end
 

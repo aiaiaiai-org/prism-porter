@@ -15,6 +15,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.metadata = {
     "source_code_uri" => "https://github.com/aiaiaiai-org/prism-porter",
-    "homepage_uri" => "https://aiaiaiai.org"
+    "homepage_uri" => "https://aiaiaiai.org",
+    "rubygems_mfa_required" => "true"
   }
 end

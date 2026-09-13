@@ -17,21 +17,29 @@ module PrismPorter
       def render(envelope)
         payload = envelope.payload
         require_schema(payload, SCHEMA)
-        lines = [
-          "Mail invitation",
-          "From: #{text(payload, "sender")}",
-          "Subject: #{text(payload, "subject")}",
-          "Received: #{text(payload, "received_at")}",
-          "Source message: #{text(payload, "source_message_reference")}"
-        ]
-        OPTIONAL_LINES.each do |field, label|
-          value = payload[field]
-          lines << "#{label}: #{value}" if value.is_a?(String) && !value.empty?
-        end
+        lines = base_lines(payload)
+        append_optional_lines(lines, payload)
         Domain::Presentation.new(text: lines.join("\n"))
       end
 
       private
+
+      def base_lines(payload)
+        [
+          "Mail invitation",
+          "From: #{text(payload, 'sender')}",
+          "Subject: #{text(payload, 'subject')}",
+          "Received: #{text(payload, 'received_at')}",
+          "Source message: #{text(payload, 'source_message_reference')}"
+        ]
+      end
+
+      def append_optional_lines(lines, payload)
+        OPTIONAL_LINES.each do |field, label|
+          value = payload[field]
+          lines << "#{label}: #{value}" if value.is_a?(String) && !value.empty?
+        end
+      end
 
       def require_schema(payload, expected)
         raise InvalidArtifact, "unsupported invitation schema" unless payload["schema_version"] == expected

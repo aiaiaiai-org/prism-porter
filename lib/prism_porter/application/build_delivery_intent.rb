@@ -13,18 +13,21 @@ module PrismPorter
       def call(envelope:)
         raise InvalidInput, "artifact envelope is required" unless envelope.is_a?(Domain::ArtifactEnvelope)
 
-        context = @route_policy.resolve(envelope)
-        renderer = @renderers.fetch(envelope.artifact_kind) do
-          raise RendererNotFound, "no renderer for artifact kind"
-        end
-        presentation = renderer.render(envelope)
-        chunks = @chunker.call(presentation)
+        presentation = renderer_for(envelope).render(envelope)
         Domain::DeliveryIntent.new(
           envelope: envelope,
-          context: context,
+          context: @route_policy.resolve(envelope),
           presentation: presentation,
-          chunks: chunks
+          chunks: @chunker.call(presentation)
         )
+      end
+
+      private
+
+      def renderer_for(envelope)
+        @renderers.fetch(envelope.artifact_kind) do
+          raise RendererNotFound, "no renderer for artifact kind"
+        end
       end
     end
   end
