@@ -1,0 +1,32 @@
+# © 2026 aiaiaiai · aiaiaiai.org
+# SPDX-License-Identifier: Apache-2.0
+
+name: Full CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  correctness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+      - run: bundle install --jobs 4 --retry 3
+      - name: Ruby syntax
+        run: git ls-files -z '*.rb' '*.gemspec' Rakefile | xargs -0 -r -n1 ruby -c
+      - name: Style
+        run: bundle exec rubocop
+      - name: Tests
+        run: bundle exec rake test
+      - name: Package
+        run: gem build prism-porter.gemspec --strict
