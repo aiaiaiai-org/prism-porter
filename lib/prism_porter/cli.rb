@@ -13,19 +13,21 @@ module PrismPorter
     }.freeze
 
     def self.run(input: $stdin, output: $stdout, errors: $stderr)
-      intent = build(parse_request(input))
-      output.puts(JSON.generate(intent.to_h))
+      output.puts(JSON.generate(build(parse_request(input)).to_h))
       0
     rescue JSON::ParserError
-      errors.puts(JSON.generate(error: "invalid_json"))
-      1
+      report_error(errors, "invalid_json")
     rescue KeyError
-      errors.puts(JSON.generate(error: "invalid_request"))
-      1
+      report_error(errors, "invalid_request")
     rescue Error => e
-      errors.puts(JSON.generate(error: e.class.name.split("::").last))
+      report_error(errors, e.class.name.split("::").last)
+    end
+
+    def self.report_error(errors, code)
+      errors.puts(JSON.generate(error: code))
       1
     end
+    private_class_method :report_error
 
     def self.parse_request(input)
       raw = input.read(MAX_INPUT_BYTES + 1)
