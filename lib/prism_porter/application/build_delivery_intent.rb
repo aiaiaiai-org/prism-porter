@@ -11,9 +11,7 @@ module PrismPorter
       end
 
       def call(envelope:)
-        unless envelope.is_a?(Domain::ArtifactEnvelope)
-          raise InvalidInput, "artifact envelope is required"
-        end
+        raise InvalidInput, "artifact envelope is required" unless envelope.is_a?(Domain::ArtifactEnvelope)
 
         context = @route_policy.resolve(envelope)
         renderer = @renderers.fetch(envelope.artifact_kind) do

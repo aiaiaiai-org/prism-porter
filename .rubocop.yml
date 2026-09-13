@@ -1,0 +1,25 @@
+# © 2026 aiaiaiai · aiaiaiai.org
+# SPDX-License-Identifier: Apache-2.0
+
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 4.0
+
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+Metrics/AbcSize:
+  Exclude: ["test/**/*"]
+Metrics/MethodLength:
+  Exclude: ["test/**/*"]
+Metrics/ClassLength:
+  Exclude: ["test/**/*"]

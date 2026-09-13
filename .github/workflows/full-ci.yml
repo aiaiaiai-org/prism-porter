@@ -25,7 +25,7 @@ jobs:
       - name: Ruby syntax
         run: git ls-files -z '*.rb' '*.gemspec' Rakefile | xargs -0 -r -n1 ruby -c
       - name: Style
-        run: bundle exec rubocop --disable-pending-cops --except Style/Documentation,Style/FrozenStringLiteralComment,Metrics/AbcSize,Metrics/MethodLength
+        run: bundle exec rubocop
       - name: Tests
         run: bundle exec rake test
       - name: Package

@@ -91,7 +91,7 @@ class PorterTest < Minitest::Test
     assert_operator intent.chunks.length, :>, 1
     assert_equal intent.presentation.text, intent.chunks.map(&:text).join
     assert_equal((1..intent.chunks.length).to_a, intent.chunks.map(&:position))
-    assert intent.chunks.all? { |chunk| chunk.total == intent.chunks.length && chunk.text.length <= 96 }
+    assert(intent.chunks.all? { |chunk| chunk.total == intent.chunks.length && chunk.text.length <= 96 })
   end
 
   def test_invitation_renderer_does_not_fabricate_optional_fields
@@ -120,8 +120,10 @@ class PorterTest < Minitest::Test
         {
           "mailbox" => { "id" => "box", "address" => "me@example.test" },
           "kind" => "source_excerpt",
-          "evidence" => { "id" => "m1", "sender" => "a@example.test", "subject" => "Hi",
-                            "received_at" => "2026-09-13T04:00:00Z" }
+          "evidence" => {
+            "id" => "m1", "sender" => "a@example.test", "subject" => "Hi",
+            "received_at" => "2026-09-13T04:00:00Z"
+          }
         }
       ]
     }

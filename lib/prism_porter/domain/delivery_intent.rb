@@ -10,9 +10,10 @@ module PrismPorter
 
       def initialize(envelope:, context:, presentation:, chunks:)
         raise InvalidInput, "delivery context is required" unless context.is_a?(LogicalContext)
-        raise InvalidInput, "presentation is required" unless presentation.is_a?(Presentation)
-        validate_chunks(chunks, presentation)
 
+        raise InvalidInput, "presentation is required" unless presentation.is_a?(Presentation)
+
+        validate_chunks(chunks, presentation)
         @artifact_id = envelope.artifact_id
         @artifact_kind = envelope.artifact_kind
         @context = context
@@ -36,11 +37,24 @@ module PrismPorter
       private
 
       def validate_chunks(value, full_presentation)
-        valid = value.is_a?(Array) && !value.empty? &&
-          value.all? { |chunk| chunk.is_a?(Presentation::Chunk) } &&
-          value.map(&:text).join == full_presentation.text &&
-          value.each_with_index.all? { |chunk, index| chunk.position == index + 1 && chunk.total == value.length }
+        valid = chunk_collection?(value) &&
+                chunks_reconstruct?(value, full_presentation) &&
+                positions_valid?(value)
         raise InvalidInput, "invalid presentation chunks" unless valid
+      end
+
+      def chunk_collection?(value)
+        value.is_a?(Array) && !value.empty? && value.all? { |chunk| chunk.is_a?(Presentation::Chunk) }
+      end
+
+      def chunks_reconstruct?(value, full_presentation)
+        value.map(&:text).join == full_presentation.text
+      end
+
+      def positions_valid?(value)
+        value.each_with_index.all? do |chunk, index|
+          chunk.position == index + 1 && chunk.total == value.length
+        end
       end
 
       def fingerprint
