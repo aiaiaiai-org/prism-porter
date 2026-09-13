@@ -6,6 +6,8 @@ require "digest"
 module PrismPorter
   module Domain
     class DeliveryIntent
+      SCHEMA_VERSION = "prism-porter.delivery-intent.v1".freeze
+
       attr_reader :artifact_id, :artifact_kind, :context, :presentation, :chunks, :idempotency_key
 
       def initialize(envelope:, context:, presentation:, chunks:)
@@ -25,6 +27,7 @@ module PrismPorter
 
       def to_h
         {
+          schema_version: SCHEMA_VERSION,
           artifact_id: artifact_id,
           artifact_kind: artifact_kind,
           logical_context: context.to_h,

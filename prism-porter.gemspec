@@ -11,7 +11,9 @@ Gem::Specification.new do |spec|
   spec.homepage = "https://aiaiaiai.org"
   spec.license = "Apache-2.0"
   spec.required_ruby_version = ">= 4.0.0"
-  spec.files = Dir["lib/**/*.rb", "README.md", "LICENSE", "NOTICE", "docs/**/*.md"]
+  spec.files = Dir["lib/**/*.rb", "bin/*", "README.md", "LICENSE", "NOTICE", "docs/**/*.md"]
+  spec.bindir = "bin"
+  spec.executables = ["prism-porter"]
   spec.require_paths = ["lib"]
   spec.metadata = {
     "source_code_uri" => "https://github.com/aiaiaiai-org/prism-porter",
