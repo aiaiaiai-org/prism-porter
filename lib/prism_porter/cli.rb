@@ -9,7 +9,8 @@ module PrismPorter
     REQUEST_SCHEMA = "prism-porter.request.v1".freeze
     RENDERERS = {
       "mail.digest" => Rendering::MailDigestRenderer.new,
-      "mail.invitation" => Rendering::MailInvitationRenderer.new
+      "mail.invitation" => Rendering::MailInvitationRenderer.new,
+      "signal.alert" => Rendering::SignalAlertRenderer.new
     }.freeze
 
     def self.run(input: $stdin, output: $stdout, errors: $stderr)
