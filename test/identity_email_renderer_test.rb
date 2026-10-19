@@ -76,28 +76,30 @@ class IdentityEmailRendererTest < Minitest::Test
 
   def test_malformed_utf8_and_incompatible_encodings_fail_closed
     malformed = "\xC3\x28".b.force_encoding(Encoding::UTF_8)
-    assert_equal "invalid identity mail code",
-                 assert_raises(PrismPorter::InvalidArtifact) { render(code: malformed) }.message
-    assert_equal "unknown identity mail client",
-                 assert_raises(PrismPorter::InvalidArtifact) { render(client_id: malformed) }.message
+    error = assert_raises(PrismPorter::InvalidArtifact) { render(code: malformed) }
+    assert_equal "invalid identity mail code", error.message
+    error = assert_raises(PrismPorter::InvalidArtifact) { render(client_id: malformed) }
+    assert_equal "unknown identity mail client", error.message
 
     settings = CLIENTS.fetch("prism")
-    assert_equal "invalid email client ID",
-                 assert_raises(PrismPorter::InvalidInput) do
-                   PrismPorter::Rendering::IdentityEmailRenderer.new(clients: { malformed => settings })
-                 end.message
-    assert_equal "invalid configured email sender",
-                 assert_raises(PrismPorter::InvalidInput) do
-                   PrismPorter::Rendering::IdentityEmailRenderer.new(
-                     clients: { "prism" => settings.merge("from" => malformed) }
-                   )
-                 end.message
-    assert_equal "invalid configured email branding",
-                 assert_raises(PrismPorter::InvalidInput) do
-                   PrismPorter::Rendering::IdentityEmailRenderer.new(
-                     clients: { "prism" => settings.merge("brand" => malformed) }
-                   )
-                 end.message
+    error = assert_raises(PrismPorter::InvalidInput) do
+      PrismPorter::Rendering::IdentityEmailRenderer.new(clients: { malformed => settings })
+    end
+    assert_equal "invalid email client ID", error.message
+
+    error = assert_raises(PrismPorter::InvalidInput) do
+      PrismPorter::Rendering::IdentityEmailRenderer.new(
+        clients: { "prism" => settings.merge("from" => malformed) }
+      )
+    end
+    assert_equal "invalid configured email sender", error.message
+
+    error = assert_raises(PrismPorter::InvalidInput) do
+      PrismPorter::Rendering::IdentityEmailRenderer.new(
+        clients: { "prism" => settings.merge("brand" => malformed) }
+      )
+    end
+    assert_equal "invalid configured email branding", error.message
 
     assert_raises(PrismPorter::InvalidArtifact) do
       render(code: "123456".encode(Encoding::UTF_16LE))
