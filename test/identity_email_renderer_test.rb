@@ -74,6 +74,42 @@ class IdentityEmailRendererTest < Minitest::Test
     end
   end
 
+
+  def test_malformed_utf8_and_incompatible_encodings_fail_closed
+    malformed = "\xC3\x28".b.force_encoding(Encoding::UTF_8)
+    assert_equal "invalid identity mail code",
+                 assert_raises(PrismPorter::InvalidArtifact) { render(code: malformed) }.message
+    assert_equal "unknown identity mail client",
+                 assert_raises(PrismPorter::InvalidArtifact) { render(client_id: malformed) }.message
+
+    settings = CLIENTS.fetch("prism")
+    assert_equal "invalid email client ID",
+                 assert_raises(PrismPorter::InvalidInput) do
+                   PrismPorter::Rendering::IdentityEmailRenderer.new(clients: { malformed => settings })
+                 end.message
+    assert_equal "invalid configured email sender",
+                 assert_raises(PrismPorter::InvalidInput) do
+                   PrismPorter::Rendering::IdentityEmailRenderer.new(
+                     clients: { "prism" => settings.merge("from" => malformed) }
+                   )
+                 end.message
+    assert_equal "invalid configured email branding",
+                 assert_raises(PrismPorter::InvalidInput) do
+                   PrismPorter::Rendering::IdentityEmailRenderer.new(
+                     clients: { "prism" => settings.merge("brand" => malformed) }
+                   )
+                 end.message
+
+    assert_raises(PrismPorter::InvalidArtifact) do
+      render(code: "123456".encode(Encoding::UTF_16LE))
+    end
+    assert_raises(PrismPorter::InvalidInput) do
+      PrismPorter::Rendering::IdentityEmailRenderer.new(
+        clients: { "prism" => settings.merge("from" => "a@example.test".encode(Encoding::UTF_16LE)) }
+      )
+    end
+  end
+
   def test_message_inspect_and_errors_do_not_expose_code
     mail = render
     refute_includes mail.inspect, CODE
