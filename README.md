@@ -10,6 +10,7 @@ Current bootstrap supports:
 - exact `RoutePolicy` resolution;
 - deterministic `mail.digest` rendering for `prism-mail.digest.v1` and `prism-hub.mail-digests.v1`;
 - deterministic `mail.invitation` rendering for `prism-mail.invitation.v1`;
+- **ephemeral** `identity.email-challenge.v1` rendering for client-scoped identity verification, link, sign-in, and recovery emails (not exposed through the serializable CLI/DeliveryIntent);
 - deterministic `signal.alert` rendering in Ukrainian for `prism-hub.signal-alert.v1`;
 - lossless transport-neutral chunking with position metadata;
 - stable delivery idempotency keys;

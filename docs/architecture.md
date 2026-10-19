@@ -43,6 +43,16 @@ Chunking is lossless. Concatenating chunk text in `position` order reconstructs 
 - `mail.invitation` accepts `prism-mail.invitation.v1` and omits optional fields that are absent from the artifact.
 - `signal.alert` accepts `prism-hub.signal-alert.v1` and renders it in Ukrainian (see below).
 
+## Transactional identity email (ephemeral API)
+
+The `PrismPorter::Rendering::IdentityEmailRenderer` is a separate, **in-process** presentation API for `identity.email-challenge.v1` (intent: `verify_email`, `sign_in`, `link_email`, or `recover`; locales `uk`/`en`). This is **not** a normal `DeliveryIntent`. The CLI and its routing registry must not accept OTP-bearing identity artifacts, because they serialize presentation text and can persist or log one-time secrets.
+
+The renderer receives a **server-verified** `client_id` and an Identity-issued 6–8-digit code. Its constructor requires an explicit allowlist of clients, each with a configured `from` and product `brand`. It rejects unknown clients, schema versions, intents, locales, malformed codes, and unsafe mail headers. Example **unprovisioned** sender options are `prism@aiaiaiai.org` and `n-reply@nilx.one`; these examples do not establish the right to transmit email from those domains.
+
+The returned immutable message contains `from`, `subject`, and plain-text `body`. It must be handed **immediately** to an Identity-owned transactional email transport; do not serialize, enqueue, cache, log, or put it into Hub's delivery artifacts. `inspect` is redacted to reduce accidental logging, but it does **not** prevent intentional reads of `body`. A secure transient delivery path remains a required integration before this renderer can support production authentication.
+
+Porter does **not** generate, store, expire, validate, or consume challenges, select the recipient mailbox, verify sender-domain DNS (SPF/DKIM/DMARC), authorize SMTP/API credentials, perform delivery/retry policy, or issue user sessions. Those are responsibilities of Identity and its email adapter. Avoid introducing a dependency on Prism Hub for a critical login path.
+
 ## `signal.alert`
 
 An alert, or the retraction of one, about a report from an unofficial source. The payload is checked field by field; a value the renderer does not know (an event, hazard class, kind, likelihood, a link that is not a `https://t.me/` address, a control character in a place name) fails with `InvalidArtifact` instead of being printed.
