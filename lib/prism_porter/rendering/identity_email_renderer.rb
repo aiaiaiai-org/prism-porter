@@ -11,12 +11,16 @@ module PrismPorter
       LOCALES = %w[uk en].freeze
       FROM_PATTERN = /\A[a-z0-9][a-z0-9._+-]*@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+\z/i
       SAFE_CLIENT_ID = /\A[a-z0-9]+(?:[-.][a-z0-9]+)*\z/
+      CODE_PATTERN = /\A[0-9]{6,8}\z/
 
       COPY = {
         "uk" => {
           "verify_email" => ["Підтвердження електронної адреси", "Підтвердіть електронну адресу цим кодом:"],
           "sign_in" => ["Код для входу", "Скористайтеся цим кодом, щоб увійти:"],
-          "link_email" => ["Прив'язування електронної адреси", "Скористайтеся цим кодом, щоб підтвердити прив'язування адреси:"],
+          "link_email" => [
+            "Прив'язування електронної адреси",
+            "Скористайтеся цим кодом, щоб підтвердити прив'язування адреси:"
+          ],
           "recover" => ["Відновлення доступу", "Використайте цей код, щоб продовжити відновлення доступу:"]
         },
         "en" => {
@@ -34,18 +38,12 @@ module PrismPorter
       # Sender domains must be separately authorized by Identity's transport.
       # The user-provided artifact cannot select a From header.
       def initialize(clients:)
-        raise InvalidInput, "email client configuration must be a nonempty hash" unless clients.is_a?(Hash) && !clients.empty?
+        unless clients.is_a?(Hash) && !clients.empty?
+          raise InvalidInput, "email client configuration must be a nonempty hash"
+        end
 
         @clients = clients.each_with_object({}) do |(id, settings), known|
-          raise InvalidInput, "invalid email client ID" unless id.is_a?(String) && id.match?(SAFE_CLIENT_ID)
-          raise InvalidInput, "invalid email client settings" unless settings.is_a?(Hash)
-
-          from = settings.fetch("from", nil)
-          brand = settings.fetch("brand", nil)
-          raise InvalidInput, "invalid configured email sender" unless from.is_a?(String) && from.match?(FROM_PATTERN) && from.length <= 254
-          raise InvalidInput, "invalid configured email branding" unless safe_brand?(brand)
-
-          known[id.dup.freeze] = { from: from.dup.freeze, brand: brand.dup.freeze }.freeze
+          known[validated_client_id(id)] = validated_client_settings(settings)
         end.freeze
       end
 
@@ -53,15 +51,13 @@ module PrismPorter
       # Immediately hand this result to a transactional transport adapter.
       # Never use ArtifactEnvelope/DeliveryIntent for one-time secrets.
       def render(schema_version:, client_id:, intent:, locale:, code:)
-        raise InvalidArtifact, "unsupported identity mail schema" unless schema_version == SCHEMA
-        raise InvalidArtifact, "unsupported identity mail intent" unless INTENTS.include?(intent)
-        raise InvalidArtifact, "unsupported identity mail locale" unless LOCALES.include?(locale)
-        raise InvalidArtifact, "invalid identity mail code" unless code.is_a?(String) && code.match?(/\A[0-9]{6,8}\z/)
+        validate_request!(schema_version:, client_id:, intent:, locale:, code:)
 
         client = @clients.fetch(client_id) { raise InvalidArtifact, "unknown identity mail client" }
         title, instruction = COPY.fetch(locale).fetch(intent)
-        body = "#{client.fetch(:brand)}\n\n#{instruction}\n\n#{code}\n\n#{FOOTER.fetch(locale)}"
-        Message.new(from: client.fetch(:from), subject: "#{client.fetch(:brand)} — #{title}", body: body)
+        brand = client.fetch(:brand)
+        body = "#{brand}\n\n#{instruction}\n\n#{code}\n\n#{FOOTER.fetch(locale)}"
+        Message.new(from: client.fetch(:from), subject: "#{brand} — #{title}", body: body)
       end
 
       class Message
@@ -82,9 +78,52 @@ module PrismPorter
 
       private
 
+      def validated_client_id(id)
+        raise InvalidInput, "invalid email client ID" unless valid_client_id?(id)
+
+        id.dup.freeze
+      end
+
+      def validated_client_settings(settings)
+        raise InvalidInput, "invalid email client settings" unless settings.is_a?(Hash)
+
+        from = settings.fetch("from", nil)
+        brand = settings.fetch("brand", nil)
+        raise InvalidInput, "invalid configured email sender" unless safe_sender?(from)
+        raise InvalidInput, "invalid configured email branding" unless safe_brand?(brand)
+
+        { from: from.dup.freeze, brand: brand.dup.freeze }.freeze
+      end
+
+      def validate_request!(schema_version:, client_id:, intent:, locale:, code:)
+        raise InvalidArtifact, "unsupported identity mail schema" unless schema_version == SCHEMA
+        raise InvalidArtifact, "unsupported identity mail intent" unless INTENTS.include?(intent)
+        raise InvalidArtifact, "unsupported identity mail locale" unless LOCALES.include?(locale)
+        raise InvalidArtifact, "invalid identity mail code" unless valid_code?(code)
+        raise InvalidArtifact, "unknown identity mail client" unless valid_client_id?(client_id)
+      end
+
+      def valid_client_id?(value)
+        valid_text_encoding?(value) && value.match?(SAFE_CLIENT_ID)
+      end
+
+      def valid_code?(value)
+        valid_text_encoding?(value) && value.match?(CODE_PATTERN)
+      end
+
+      def safe_sender?(value)
+        valid_text_encoding?(value) && value.bytesize <= 254 && value.match?(FROM_PATTERN)
+      end
+
       def safe_brand?(value)
-        value.is_a?(String) && value.valid_encoding? && value.length.between?(1, 80) &&
+        valid_text_encoding?(value) && value.length.between?(1, 80) &&
           !value.match?(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/)
+      end
+
+      # Only UTF-8 or pure ASCII can safely be used with these regex contracts.
+      def valid_text_encoding?(value)
+        value.is_a?(String) && value.valid_encoding? &&
+          (value.encoding == Encoding::UTF_8 || value.ascii_only?)
       end
     end
   end
