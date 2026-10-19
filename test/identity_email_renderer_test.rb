@@ -74,7 +74,6 @@ class IdentityEmailRendererTest < Minitest::Test
     end
   end
 
-
   def test_malformed_utf8_and_incompatible_encodings_fail_closed
     malformed = "\xC3\x28".b.force_encoding(Encoding::UTF_8)
     assert_equal "invalid identity mail code",
