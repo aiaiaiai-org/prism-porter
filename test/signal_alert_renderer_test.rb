@@ -37,7 +37,7 @@ class SignalAlertRendererTest < Minitest::Test
     expected = <<~TEXT.chomp
       ⚠️ БпЛА — Київ
       Що: ударні дрони
-      
+
       Повідомляли (Telegram, за київським часом):
       • 14:57 — @vanek_nikolaev https://t.me/vanek_nikolaev/43220
       • 14:59 — @vanek_nikolaev https://t.me/vanek_nikolaev/43222
