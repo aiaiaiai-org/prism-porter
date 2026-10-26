@@ -31,16 +31,18 @@ module PrismPorter
 
       def details(reading)
         kinds = reading.kinds
-        likelihood = reading.likelihood
-        [(kinds.empty? ? nil : "Що: #{kinds.join(', ')}"), likelihood && "Ймовірність: #{likelihood}"].compact
+        # Keep validating the legacy band, but never present channel count as a measured
+        # probability of harm or independently confirmed local risk.
+        reading.likelihood
+        [(kinds.empty? ? nil : "Що: #{kinds.join(', ')}")].compact
       end
 
       def retraction(reading)
-        said = "джерело написало, що цю загрозу знято."
+        said = "джерело відкликало своє повідомлення про загрозу."
         link = reading.event_url ? " #{reading.event_url}" : ""
-        lines = ["ℹ️ Джерело повідомило про відбій: #{place_line(reading)}",
+        lines = ["ℹ️ Джерела відкликали повідомлення: #{place_line(reading)}",
                  "#{reading.event_clock} (#{TIME_NOTE}) #{said}#{link}",
-                 "Це не офіційний відбій."]
+                 "Це не офіційний відбій. Загрозу не можна вважати знятою лише за цим повідомленням."]
         still = reading.still_active
         lines << "Ще діють повідомлення про цю загрозу: #{still.join(', ')}." unless still.empty?
         lines.push("", "Відсутність повідомлень не означає безпеки.")
