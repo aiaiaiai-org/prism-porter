@@ -37,7 +37,6 @@ class SignalAlertRendererTest < Minitest::Test
     expected = <<~TEXT.chomp
       ⚠️ БпЛА — Київ
       Що: ударні дрони
-      Ймовірність: помірна
 
       Повідомляли (Telegram, за київським часом):
       • 14:57 — @vanek_nikolaev https://t.me/vanek_nikolaev/43220
@@ -65,7 +64,7 @@ class SignalAlertRendererTest < Minitest::Test
 
   def test_the_likelihood_is_omitted_when_the_artifact_has_none
     refute_includes render("likelihood" => nil), "Ймовірність"
-    assert_includes render("likelihood" => "high"), "Ймовірність: висока"
+    refute_includes render("likelihood" => "high"), "Ймовірність"
   end
 
   def test_an_alert_never_speaks_of_an_end
@@ -78,9 +77,9 @@ class SignalAlertRendererTest < Minitest::Test
 
   def test_a_retraction_says_the_source_called_it_off_and_that_this_is_not_official
     expected = <<~TEXT.chomp
-      ℹ️ Джерело повідомило про відбій: БпЛА, Київ
-      14:59 (за київським часом) джерело написало, що цю загрозу знято. https://t.me/vanek_nikolaev/43222
-      Це не офіційний відбій.
+      ℹ️ Джерела відкликали повідомлення: БпЛА, Київ
+      14:59 (за київським часом) джерело відкликало своє повідомлення про загрозу. https://t.me/vanek_nikolaev/43222
+      Це не офіційний відбій. Загрозу не можна вважати знятою лише за цим повідомленням.
 
       Відсутність повідомлень не означає безпеки.
     TEXT
@@ -98,7 +97,7 @@ class SignalAlertRendererTest < Minitest::Test
   def test_a_retraction_without_a_link_still_renders
     text = render("event" => "retraction", "event_url" => nil)
 
-    assert_includes text, "джерело написало, що цю загрозу знято.\n"
+    assert_includes text, "джерело відкликало своє повідомлення про загрозу.\n"
   end
 
   def test_time_follows_ukrainian_daylight_saving
