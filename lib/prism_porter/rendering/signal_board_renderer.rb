@@ -6,7 +6,8 @@ module PrismPorter
     # Renders one person's live board of an attack: every object the sources reported for their
     # zone or their oblast, at the zone first, edited in place as reports come and go.
     #
-    # It lists what sources said, with the time and the source. It never states that a place is
+    # It lists what sources said and when, never which source: the `source` stays in the artifact
+    # for audit and is checked, not printed. It never states that a place is
     # safe: when nothing is active it says that the reports ended, not that the sky is clear.
     class SignalBoardRenderer
       SCHEMA = "prism-hub.signal-board.v1".freeze
@@ -67,8 +68,7 @@ module PrismPorter
         r = SignalBoardReading
         mark = MARKS.fetch(r.level(entry))
         line = "#{mark} #{r.hazard(entry)}#{where(entry)} · #{clock(r.time(entry, 'last_seen_at'))}"
-        source = r.source(entry)
-        line += " #{source}" if source
+        r.source(entry) # checked, never shown
         line += " · без новин" if entry["quiet"] == true
         line
       end
