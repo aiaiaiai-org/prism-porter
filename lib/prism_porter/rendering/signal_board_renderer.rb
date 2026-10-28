@@ -54,7 +54,7 @@ module PrismPorter
       def footer(payload)
         count = ended(payload)
         lines = count.positive? ? ["", "✔️ Завершились: #{count}"] : []
-        lines << "Оновлено #{clock(SignalBoardReading.time(payload, 'as_of'))} · неофіційні джерела"
+        lines << "Оновлено #{clock(SignalBoardReading.time(payload, 'as_of'))}"
       end
 
       def ended(payload)

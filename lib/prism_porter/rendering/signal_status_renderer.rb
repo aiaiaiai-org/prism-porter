@@ -8,14 +8,12 @@ module PrismPorter
     # Renders one person's status line: how close the danger is, and what.
     #
     # The hub decides when it rings; this only says it. A quiet status says the sources went
-    # quiet and that this is not an all-clear, and it is the one place a stale position is
-    # mentioned. Nothing here says a place is safe.
+    # quiet, and it is the one place a stale position is mentioned. Nothing here says a place is
+    # safe; what the service is, the person is told once when they start.
     class SignalStatusRenderer
       SCHEMA = "prism-hub.signal-status.v1".freeze
       LEVELS = %w[here region quiet].freeze
-      NOTE = "Неофіційні джерела. Орієнтуйтеся на повітряну тривогу.".freeze
-      QUIET = "⚪ Джерела затихли\nАктивних повідомлень для вашої зони немає. " \
-              "Це не відбій: орієнтуйтеся на повітряну тривогу.".freeze
+      QUIET = "⚪ Джерела затихли\nНових повідомлень для вашої зони немає.".freeze
       HEADLINES = { "here" => "🔴 Загроза у вашій зоні", "region" => "🟠 Загроза у вашій області" }.freeze
       WEEKDAYS = ["в неділю", "в понеділок", "у вівторок", "в середу", "в четвер", "в пʼятницю",
                   "в суботу"].freeze
@@ -41,7 +39,7 @@ module PrismPorter
 
         lines = [HEADLINES.fetch(level), "", *main.map { |item| SignalBoardReading.hazard(item) }]
         lines << "🟠 на вашу область: #{hazards(region)}" if level == "here" && !region.empty?
-        lines.push("", NOTE).join("\n")
+        lines.join("\n")
       end
 
       def hazards(items)

@@ -52,7 +52,7 @@ class SignalBoardRendererTest < Minitest::Test
       🛵 шахеди — Бровари · востаннє о 00:10
 
       ✔️ Завершились: 2
-      Оновлено 03:32 · неофіційні джерела
+      Оновлено 03:32
     TEXT
     assert_equal expected, render("signal.board", board)
   end
@@ -80,8 +80,6 @@ class SignalBoardRendererTest < Minitest::Test
       ☄️ балістика ×1
       ✈️ реактивні шахеди ×3
       🟠 на вашу область: 🛵 шахеди ×4
-
-      Неофіційні джерела. Орієнтуйтеся на повітряну тривогу.
     TEXT
     assert_equal expected, render("signal.status", status)
     region = render("signal.status", status("level" => "region", "here" => []))
@@ -93,8 +91,7 @@ class SignalBoardRendererTest < Minitest::Test
   def test_a_quiet_status_is_never_an_all_clear_and_may_remind_of_an_old_position
     quiet = render("signal.status", status("level" => "quiet", "here" => [], "region" => []))
     assert quiet.start_with?("⚪ Джерела затихли")
-    assert_includes quiet, "Це не відбій"
-    refute_match(/чист|безпечн/i, quiet)
+    refute_match(/чист|безпечн|відбій|неофіційн/i, quiet)
     refute_includes quiet, "📍"
 
     saturday = render("signal.status", status("level" => "quiet", "here" => [], "region" => [],
