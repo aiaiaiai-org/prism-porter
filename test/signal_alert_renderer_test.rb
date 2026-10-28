@@ -33,19 +33,17 @@ class SignalAlertRendererTest < Minitest::Test
     PrismPorter::Rendering::SignalAlertRenderer.new.render(envelope).text
   end
 
-  def test_an_alert_names_the_hazard_the_place_the_source_and_the_time
+  def test_an_alert_shows_hazard_place_and_time_but_no_provider_details
     expected = <<~TEXT.chomp
       ⚠️ БпЛА — Київ
       Що: ударні дрони
+      Оновлено: 14:59 (за київським часом)
 
-      Повідомляли (Telegram, за київським часом):
-      • 14:57 — @vanek_nikolaev https://t.me/vanek_nikolaev/43220
-      • 14:59 — @vanek_nikolaev https://t.me/vanek_nikolaev/43222
-
-      Це неофіційне джерело, а не повітряна тривога. Стежте за офіційними оповіщеннями. Відсутність повідомлень не означає безпеки.
+      Це неофіційне повідомлення, а не сигнал повітряної тривоги. Орієнтуйтесь на офіційні сповіщення. Відсутність повідомлень не означає безпеки.
     TEXT
 
     assert_equal expected, render
+    refute_match(%r{(?:https?://|@vanek_nikolaev|джерел|Telegram)}, render)
   end
 
   def test_a_nearby_report_says_so
@@ -75,16 +73,18 @@ class SignalAlertRendererTest < Minitest::Test
     refute_includes text, "valid_until"
   end
 
-  def test_a_retraction_says_the_source_called_it_off_and_that_this_is_not_official
+  def test_a_retraction_is_explicitly_not_an_all_clear_and_hides_source_identity
     expected = <<~TEXT.chomp
-      ℹ️ Джерела відкликали повідомлення: БпЛА, Київ
-      14:59 (за київським часом) джерело відкликало своє повідомлення про загрозу. https://t.me/vanek_nikolaev/43222
+      ℹ️ Уточнення щодо загрози: БпЛА, Київ
+      Оновлено: 14:59 (за київським часом)
+      Попереднє повідомлення про загрозу відкликано.
       Це не офіційний відбій. Загрозу не можна вважати знятою лише за цим повідомленням.
 
       Відсутність повідомлень не означає безпеки.
     TEXT
 
     assert_equal expected, render("event" => "retraction")
+    refute_match(%r{(?:https?://|@vanek_nikolaev|джерел|Telegram)}, render("event" => "retraction"))
   end
 
   def test_a_retraction_names_reports_that_still_cover_the_person
@@ -97,15 +97,15 @@ class SignalAlertRendererTest < Minitest::Test
   def test_a_retraction_without_a_link_still_renders
     text = render("event" => "retraction", "event_url" => nil)
 
-    assert_includes text, "джерело відкликало своє повідомлення про загрозу.\n"
+    assert_includes text, "Попереднє повідомлення про загрозу відкликано.\n"
   end
 
   def test_time_follows_ukrainian_daylight_saving
-    summer = render("sources" => [source("2026-07-01T10:00:00Z")])
-    winter = render("sources" => [source("2026-12-01T10:00:00Z")])
+    summer = render("event_at" => "2026-07-01T10:00:00Z")
+    winter = render("event_at" => "2026-12-01T10:00:00Z")
 
-    assert_includes summer, "• 13:00"
-    assert_includes winter, "• 12:00"
+    assert_includes summer, "Оновлено: 13:00"
+    assert_includes winter, "Оновлено: 12:00"
   end
 
   def test_the_daylight_saving_switches_at_0100_utc_on_the_last_sunday
@@ -146,10 +146,21 @@ class SignalAlertRendererTest < Minitest::Test
     end
   end
 
-  def test_a_source_that_is_not_a_telegram_channel_is_named_generically
+  def test_unrecognised_provider_is_never_exposed_to_recipient
     text = render("sources" => [source("2026-09-30T11:57:00Z", source_id: "rss:whatever")])
 
-    assert_includes text, "• 14:57 — джерело https://t.me/"
+    refute_match(%r{(?:https?://|@|rss:|джерел|Telegram)}, text)
+    assert_includes text, "⚠️ БпЛА — Київ"
+  end
+
+  def test_varied_source_metadata_never_changes_recipient_text
+    alternative = render(
+      "sources" => [source("2026-09-30T11:57:00Z", source_id: "telegram.channel:other")],
+      "event_url" => "https://t.me/other/5"
+    )
+    assert_equal render, alternative
+    assert_equal render("event" => "retraction"),
+                 render("event" => "retraction", "event_url" => "https://t.me/other/5")
   end
 
   def test_it_builds_a_delivery_intent_through_the_worker_contract

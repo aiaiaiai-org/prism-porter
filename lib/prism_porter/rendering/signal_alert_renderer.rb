@@ -5,14 +5,13 @@ module PrismPorter
   module Rendering
     # Renders a Prism Hub signal alert as Ukrainian plain text.
     #
-    # The text says what a report claimed, who made it, and when, and says plainly that the source
-    # is unofficial. It shows only what the artifact holds. It never states that a place is safe:
-    # a retraction reports that the source called a threat off, and a missing message is not an
-    # all-clear.
+    # The recipient sees the threat, time and safety limitations, not provider names,
+    # source IDs or links. Provenance remains in the validated artifact for audit.
+    # Retractions describe a withdrawn report, never an official all-clear.
     class SignalAlertRenderer
       TIME_NOTE = "за київським часом".freeze
-      DISCLAIMER = "Це неофіційне джерело, а не повітряна тривога. Стежте за офіційними оповіщеннями. " \
-                   "Відсутність повідомлень не означає безпеки.".freeze
+      DISCLAIMER = "Це неофіційне повідомлення, а не сигнал повітряної тривоги. " \
+                   "Орієнтуйтесь на офіційні сповіщення. Відсутність повідомлень не означає безпеки.".freeze
 
       def render(envelope)
         reading = SignalAlertReading.new(envelope.payload)
@@ -24,9 +23,9 @@ module PrismPorter
 
       def alert(reading)
         lines = ["⚠️ #{headline(reading)}", *details(reading)]
-        lines.push("", "Повідомляли (Telegram, #{TIME_NOTE}):")
-        lines.concat(reading.sources.map { |source| "• #{source.clock} — #{source.channel} #{source.url}" })
-        lines.push("", DISCLAIMER)
+        reading.sources # Still validate provenance data, without exposing it in the delivery.
+        reading.event_url
+        lines.push("Оновлено: #{reading.event_clock} (#{TIME_NOTE})", "", DISCLAIMER)
       end
 
       def details(reading)
@@ -38,10 +37,11 @@ module PrismPorter
       end
 
       def retraction(reading)
-        said = "джерело відкликало своє повідомлення про загрозу."
-        link = reading.event_url ? " #{reading.event_url}" : ""
-        lines = ["ℹ️ Джерела відкликали повідомлення: #{place_line(reading)}",
-                 "#{reading.event_clock} (#{TIME_NOTE}) #{said}#{link}",
+        reading.sources # Validate the source metadata without printing it.
+        reading.event_url
+        lines = ["ℹ️ Уточнення щодо загрози: #{place_line(reading)}",
+                 "Оновлено: #{reading.event_clock} (#{TIME_NOTE})",
+                 "Попереднє повідомлення про загрозу відкликано.",
                  "Це не офіційний відбій. Загрозу не можна вважати знятою лише за цим повідомленням."]
         still = reading.still_active
         lines << "Ще діють повідомлення про цю загрозу: #{still.join(', ')}." unless still.empty?
