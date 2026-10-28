@@ -90,7 +90,7 @@ During an attack a person keeps two messages instead of one per report. The hub 
 | Field | Meaning |
 | --- | --- |
 | `since`, `as_of` | the attack's first report, and when the board was built |
-| `entries` | `level` (`here`: the person's zone; `region`: their oblast), `kind` (`air.*`), `count` (objects, or `null` when no source said how many), `place`, `target`, `last_seen_at`, `source` (`@channel`), `quiet` (live but no news) |
+| `entries` | `level` (`here`: the person's zone; `region`: their oblast), `kind` (`air.*`), `count` (objects, or `null` when no source said how many), `place`, `target`, `last_seen_at`, `source` (`@channel`, checked and kept for audit, never shown), `quiet` (live but no news) |
 | `quiet` | objects with no news for a long time: shown apart, never as ended |
 | `ended` | how many objects were shot down or called off |
 
