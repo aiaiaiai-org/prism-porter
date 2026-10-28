@@ -70,10 +70,14 @@ An alert, or the retraction of one, about a report from an unofficial source. Th
 
 Rules the text keeps:
 
-- The source is named and called unofficial, and the message says it is not an air-raid alert.
-- Times are shown in Ukraine's local time, computed from the UTC instant with the EU daylight-saving rule, so a rendering does not depend on the machine.
+- The recipient does not see source names, IDs, channels, or original post links. The validated
+  artifact retains provenance internally; the message states that it is unofficial and not an
+  air-raid alert.
+- The event update time is shown in Ukraine's local time, computed from its UTC instant with the EU daylight-saving rule, independently of the machine clock.
 - An alert never says a threat has ended, and the artifact's `valid_until` is not shown: an expiry is not an all-clear.
-- A retraction says the source wrote that the threat was called off, that this is not an official all-clear, lists other reports that still apply, and repeats that no message does not mean safety.
+- A retraction says a prior report was withdrawn, without attributing it to a named provider; it
+  explicitly says this is not an official all-clear, lists other reports that still apply, and
+  repeats that silence does not mean safety.
 - The person's position is not in the artifact and never in the text.
 
 AI is not required for routing, rendering, or correctness.
