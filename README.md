@@ -12,6 +12,7 @@ Current bootstrap supports:
 - deterministic `mail.invitation` rendering for `prism-mail.invitation.v1`;
 - **ephemeral** `identity.email-challenge.v1` rendering for client-scoped identity verification, link, sign-in, and recovery emails (not exposed through the serializable CLI/DeliveryIntent);
 - deterministic `signal.alert` rendering in Ukrainian for `prism-hub.signal-alert.v1`;
+- `signal.board` and `signal.status`: one person's live board of an attack and its status line;
 - lossless transport-neutral chunking with position metadata;
 - stable delivery idempotency keys;
 - typed fail-closed errors.

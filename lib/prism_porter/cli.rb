@@ -10,7 +10,9 @@ module PrismPorter
     RENDERERS = {
       "mail.digest" => Rendering::MailDigestRenderer.new,
       "mail.invitation" => Rendering::MailInvitationRenderer.new,
-      "signal.alert" => Rendering::SignalAlertRenderer.new
+      "signal.alert" => Rendering::SignalAlertRenderer.new,
+      "signal.board" => Rendering::SignalBoardRenderer.new,
+      "signal.status" => Rendering::SignalStatusRenderer.new
     }.freeze
 
     def self.run(input: $stdin, output: $stdout, errors: $stderr)

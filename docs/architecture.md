@@ -42,6 +42,7 @@ Chunking is lossless. Concatenating chunk text in `position` order reconstructs 
 - `mail.digest` accepts `prism-mail.digest.v1` and the current Hub aggregate `prism-hub.mail-digests.v1`.
 - `mail.invitation` accepts `prism-mail.invitation.v1` and omits optional fields that are absent from the artifact.
 - `signal.alert` accepts `prism-hub.signal-alert.v1` and renders it in Ukrainian (see below).
+- `signal.board` and `signal.status` accept `prism-hub.signal-board.v1` and `prism-hub.signal-status.v1`: one person's live board of an attack and the status line above it (see below).
 
 ## Transactional identity email (ephemeral API)
 
@@ -79,6 +80,23 @@ Rules the text keeps:
   explicitly says this is not an official all-clear, lists other reports that still apply, and
   repeats that silence does not mean safety.
 - The person's position is not in the artifact and never in the text.
+
+## `signal.board` and `signal.status`
+
+During an attack a person keeps two messages instead of one per report. The hub decides what they hold and when the status rings; Porter only writes the words. Both are checked like `signal.alert`: an unknown kind, level, count, source, or a control character in a name fails with `InvalidArtifact`.
+
+`signal.board` lists the objects the sources reported for the person, built by the hub from Prism Signal tracks:
+
+| Field | Meaning |
+| --- | --- |
+| `since`, `as_of` | the attack's first report, and when the board was built |
+| `entries` | `level` (`here`: the person's zone; `region`: their oblast), `kind` (`air.*`), `count` (objects, or `null` when no source said how many), `place`, `target`, `last_seen_at`, `source` (`@channel`), `quiet` (live but no news) |
+| `quiet` | objects with no news for a long time: shown apart, never as ended |
+| `ended` | how many objects were shot down or called off |
+
+With no entries and nothing quiet, the board says the reports ended and how many; it never says a place is safe.
+
+`signal.status` is `level` `here`, `region`, or `quiet`, with the hazards at each level. A quiet status says the sources went quiet and that this is not an all-clear, and, when the hub passes `position_at`, reminds the person to refresh an old position (`в суботу о 12:34`).
 
 AI is not required for routing, rendering, or correctness.
 
