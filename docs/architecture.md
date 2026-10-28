@@ -72,13 +72,12 @@ An alert, or the retraction of one, about a report from an unofficial source. Th
 Rules the text keeps:
 
 - The recipient does not see source names, IDs, channels, or original post links. The validated
-  artifact retains provenance internally; the message states that it is unofficial and not an
-  air-raid alert.
+  artifact retains provenance internally.
+- No message repeats that the service is unofficial: the bot says so once, when the person starts.
 - The event update time is shown in Ukraine's local time, computed from its UTC instant with the EU daylight-saving rule, independently of the machine clock.
 - An alert never says a threat has ended, and the artifact's `valid_until` is not shown: an expiry is not an all-clear.
-- A retraction says a prior report was withdrawn, without attributing it to a named provider; it
-  explicitly says this is not an official all-clear, lists other reports that still apply, and
-  repeats that silence does not mean safety.
+- A retraction says a prior report was withdrawn, without attributing it to a named provider, and
+  lists other reports that still apply. It never says the threat is over or the place is safe.
 - The person's position is not in the artifact and never in the text.
 
 ## `signal.board` and `signal.status`
@@ -96,7 +95,7 @@ During an attack a person keeps two messages instead of one per report. The hub 
 
 With no entries and nothing quiet, the board says the reports ended and how many; it never says a place is safe.
 
-`signal.status` is `level` `here`, `region`, or `quiet`, with the hazards at each level. A quiet status says the sources went quiet and that this is not an all-clear, and, when the hub passes `position_at`, reminds the person to refresh an old position (`в суботу о 12:34`).
+`signal.status` is `level` `here`, `region`, or `quiet`, with the hazards at each level. A quiet status says the sources went quiet, never that a place is safe, and, when the hub passes `position_at`, reminds the person to refresh an old position (`в суботу о 12:34`).
 
 AI is not required for routing, rendering, or correctness.
 

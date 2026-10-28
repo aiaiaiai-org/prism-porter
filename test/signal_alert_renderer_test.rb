@@ -38,8 +38,6 @@ class SignalAlertRendererTest < Minitest::Test
       ⚠️ БпЛА — Київ
       Що: ударні дрони
       Оновлено: 14:59 (за київським часом)
-
-      Це неофіційне повідомлення, а не сигнал повітряної тривоги. Орієнтуйтесь на офіційні сповіщення. Відсутність повідомлень не означає безпеки.
     TEXT
 
     assert_equal expected, render
@@ -73,14 +71,11 @@ class SignalAlertRendererTest < Minitest::Test
     refute_includes text, "valid_until"
   end
 
-  def test_a_retraction_is_explicitly_not_an_all_clear_and_hides_source_identity
+  def test_a_retraction_says_a_report_was_withdrawn_never_that_it_is_over
     expected = <<~TEXT.chomp
       ℹ️ Уточнення щодо загрози: БпЛА, Київ
       Оновлено: 14:59 (за київським часом)
       Попереднє повідомлення про загрозу відкликано.
-      Це не офіційний відбій. Загрозу не можна вважати знятою лише за цим повідомленням.
-
-      Відсутність повідомлень не означає безпеки.
     TEXT
 
     assert_equal expected, render("event" => "retraction")
@@ -91,13 +86,13 @@ class SignalAlertRendererTest < Minitest::Test
     text = render("event" => "retraction", "still_active" => %w[Бровари Ірпінь])
 
     assert_includes text, "Ще діють повідомлення про цю загрозу: Бровари, Ірпінь."
-    assert_includes text, "Це не офіційний відбій."
+    refute_match(/безпечн|знят|неофіційн/i, text)
   end
 
   def test_a_retraction_without_a_link_still_renders
     text = render("event" => "retraction", "event_url" => nil)
 
-    assert_includes text, "Попереднє повідомлення про загрозу відкликано.\n"
+    assert text.end_with?("Попереднє повідомлення про загрозу відкликано."), text
   end
 
   def test_time_follows_ukrainian_daylight_saving

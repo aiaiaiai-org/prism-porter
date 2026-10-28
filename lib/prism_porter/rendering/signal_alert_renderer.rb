@@ -5,13 +5,12 @@ module PrismPorter
   module Rendering
     # Renders a Prism Hub signal alert as Ukrainian plain text.
     #
-    # The recipient sees the threat, time and safety limitations, not provider names,
-    # source IDs or links. Provenance remains in the validated artifact for audit.
-    # Retractions describe a withdrawn report, never an official all-clear.
+    # The recipient sees the threat and its time, not provider names, source IDs or links.
+    # Provenance remains in the validated artifact for audit. What the service is, and is not,
+    # the person is told once when they start; it is not repeated under every message.
+    # A retraction says a report was withdrawn and never that a threat has ended.
     class SignalAlertRenderer
       TIME_NOTE = "за київським часом".freeze
-      DISCLAIMER = "Це неофіційне повідомлення, а не сигнал повітряної тривоги. " \
-                   "Орієнтуйтесь на офіційні сповіщення. Відсутність повідомлень не означає безпеки.".freeze
 
       def render(envelope)
         reading = SignalAlertReading.new(envelope.payload)
@@ -25,7 +24,7 @@ module PrismPorter
         lines = ["⚠️ #{headline(reading)}", *details(reading)]
         reading.sources # Still validate provenance data, without exposing it in the delivery.
         reading.event_url
-        lines.push("Оновлено: #{reading.event_clock} (#{TIME_NOTE})", "", DISCLAIMER)
+        lines.push("Оновлено: #{reading.event_clock} (#{TIME_NOTE})")
       end
 
       def details(reading)
@@ -41,11 +40,10 @@ module PrismPorter
         reading.event_url
         lines = ["ℹ️ Уточнення щодо загрози: #{place_line(reading)}",
                  "Оновлено: #{reading.event_clock} (#{TIME_NOTE})",
-                 "Попереднє повідомлення про загрозу відкликано.",
-                 "Це не офіційний відбій. Загрозу не можна вважати знятою лише за цим повідомленням."]
+                 "Попереднє повідомлення про загрозу відкликано."]
         still = reading.still_active
         lines << "Ще діють повідомлення про цю загрозу: #{still.join(', ')}." unless still.empty?
-        lines.push("", "Відсутність повідомлень не означає безпеки.")
+        lines
       end
 
       def headline(reading)
