@@ -43,7 +43,7 @@ class SignalAlertRendererTest < Minitest::Test
     TEXT
 
     assert_equal expected, render
-    refute_match(/(?:https?:\/\/|@vanek_nikolaev|джерел|Telegram)/, render)
+    refute_match(%r{(?:https?://|@vanek_nikolaev|джерел|Telegram)}, render)
   end
 
   def test_a_nearby_report_says_so
@@ -84,7 +84,7 @@ class SignalAlertRendererTest < Minitest::Test
     TEXT
 
     assert_equal expected, render("event" => "retraction")
-    refute_match(/(?:https?:\/\/|@vanek_nikolaev|джерел|Telegram)/, render("event" => "retraction"))
+    refute_match(%r{(?:https?://|@vanek_nikolaev|джерел|Telegram)}, render("event" => "retraction"))
   end
 
   def test_a_retraction_names_reports_that_still_cover_the_person
@@ -149,7 +149,7 @@ class SignalAlertRendererTest < Minitest::Test
   def test_unrecognised_provider_is_never_exposed_to_recipient
     text = render("sources" => [source("2026-09-30T11:57:00Z", source_id: "rss:whatever")])
 
-    refute_match(/(?:https?:\/\/|@|rss:|джерел|Telegram)/, text)
+    refute_match(%r{(?:https?://|@|rss:|джерел|Telegram)}, text)
     assert_includes text, "⚠️ БпЛА — Київ"
   end
 
