@@ -88,12 +88,14 @@ During an attack a person keeps two messages instead of one per report. The hub 
 
 | Field | Meaning |
 | --- | --- |
-| `since`, `as_of` | the attack's first report, and when the board was built |
+| `since`, `as_of` | the attack's first report (`null` before any), and when the board was built |
+| `level` | optional: `here`, `region`, or `quiet`, for the headline; derived from `entries` when absent |
+| `position_at` | optional: when the person's position was last set, sent only when it may be old |
 | `entries` | `level` (`here`: the person's zone; `region`: their oblast), `kind` (`air.*`), `count` (objects, or `null` when no source said how many), `place`, `target`, `last_seen_at`, `source` (`@channel`, checked and kept for audit, never shown), `quiet` (live but no news) |
 | `quiet` | objects with no news for a long time: shown apart, never as ended |
 | `ended` | how many objects were shot down or called off |
 
-With no entries and nothing quiet, the board says the reports ended and how many; it never says a place is safe.
+The hub keeps one board per person, pinned and edited, so it never goes away. Its headline says how close the danger is (🔴 your zone, 🟠 your oblast). Between attacks it says there are no new reports, when the last attack ran and how many objects in it ended, and, given `position_at`, reminds the person to refresh an old position. It never says a place is safe.
 
 `signal.status` is `level` `here`, `region`, or `quiet`, with the hazards at each level. A quiet status says the sources went quiet, never that a place is safe, and, when the hub passes `position_at`, reminds the person to refresh an old position (`в суботу о 12:34`).
 

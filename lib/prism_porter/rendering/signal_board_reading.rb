@@ -1,6 +1,7 @@
 # © 2026 aiaiaiai · aiaiaiai.org
 # SPDX-License-Identifier: Apache-2.0
 
+require "date"
 require "time"
 
 module PrismPorter
@@ -18,6 +19,8 @@ module PrismPorter
       LEVELS = %w[here region].freeze
       CHANNEL_PATTERN = /\A@[A-Za-z][A-Za-z0-9_]{3,31}\z/
       MAX_COUNT = 100
+      WEEKDAYS = ["в неділю", "в понеділок", "у вівторок", "в середу", "в четвер", "в пʼятницю",
+                  "в суботу"].freeze
 
       module_function
 
@@ -85,6 +88,25 @@ module PrismPorter
       def hazard(object)
         number = count(object)
         number ? "#{kind(object)} ×#{number}" : kind(object)
+      end
+
+      # `в суботу о 12:34`, `вчора о 12:34`, or `24.10 о 12:34` when more than a week ago.
+      def day(at, now)
+        days = (local(now).to_date - local(at).to_date).to_i
+        "#{date(days, local(at))} о #{Presentation::KyivTime.clock(at)}"
+      end
+
+      def date(days, local_at)
+        case days
+        when 0 then "сьогодні"
+        when 1 then "вчора"
+        when 2..6 then WEEKDAYS.fetch(local_at.wday)
+        else local_at.strftime("%d.%m")
+        end
+      end
+
+      def local(time)
+        time.utc + (Presentation::KyivTime.offset_hours(time) * 3600)
       end
     end
   end

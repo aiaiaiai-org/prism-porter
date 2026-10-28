@@ -3,16 +3,20 @@
 
 module PrismPorter
   module Rendering
-    # Renders one person's live board of an attack: every object the sources reported for their
-    # zone or their oblast, at the zone first, edited in place as reports come and go.
+    # Renders one person's board: how close the danger is, and every object the sources reported
+    # for their zone or their oblast, at the zone first. The hub keeps one board per person,
+    # pinned and edited in place; it never goes away, it only goes quiet between attacks.
     #
     # It lists what sources said and when, never which source: the `source` stays in the artifact
-    # for audit and is checked, not printed. It never states that a place is
-    # safe: when nothing is active it says that the reports ended, not that the sky is clear.
+    # for audit and is checked, not printed. It never states that a place is safe: a quiet board
+    # says there are no new reports, not that the sky is clear. A quiet board is also where an old
+    # position is mentioned.
     class SignalBoardRenderer
       SCHEMA = "prism-hub.signal-board.v1".freeze
       MAX_LINES = 20
       MARKS = { "here" => "🔴", "region" => "🟠" }.freeze
+      HEADLINES = { "here" => "🔴 Загроза у вашій зоні", "region" => "🟠 Загроза у вашій області",
+                    "quiet" => "⚪ Нових повідомлень про загрози немає" }.freeze
 
       def render(envelope)
         payload = envelope.payload
@@ -26,17 +30,47 @@ module PrismPorter
       def lines(payload)
         entries = SignalBoardReading.list(payload, "entries")
         quiet = SignalBoardReading.list(payload, "quiet")
-        return closed(payload) if entries.empty? && quiet.empty?
-
-        ["📡 Повідомлення джерел · з #{clock(SignalBoardReading.time(payload, 'since'))}", "",
-         *active(entries), *quiet_block(quiet), *footer(payload)]
+        level = level(payload, entries)
+        lines = [headline(payload, level)]
+        lines.push("", *active(entries)) unless entries.empty?
+        [*lines, *quiet_block(quiet), *summary(payload, level), *reminder(payload, level), *footer(payload, level)]
       end
 
-      def closed(payload)
-        since = clock(SignalBoardReading.time(payload, "since"))
+      # The hub says how close the danger is; an older hub only lists entries, so it is derived.
+      def level(payload, entries)
+        level = payload["level"]
+        return level if HEADLINES.key?(level)
+        raise InvalidArtifact, "signal board level is unknown" unless level.nil?
+        return "quiet" if entries.empty?
+
+        entries.any? { |entry| SignalBoardReading.level(entry) == "here" } ? "here" : "region"
+      end
+
+      def headline(payload, level)
+        since = SignalBoardReading.optional_time(payload, "since")
+        return HEADLINES.fetch(level) if level == "quiet" || since.nil?
+
+        "#{HEADLINES.fetch(level)} · з #{clock(since)}"
+      end
+
+      # On a quiet board: when the last attack ran and how many objects in it ended.
+      def summary(payload, level)
+        count = ended(payload)
+        since = SignalBoardReading.optional_time(payload, "since")
+        return [] unless level == "quiet" && since && count.positive?
+
         as_of = clock(SignalBoardReading.time(payload, "as_of"))
-        ["📡 Повідомлення джерел · #{since}–#{as_of}",
-         "Активних повідомлень немає · завершились: #{ended(payload)}"]
+        ["", "Остання атака: #{clock(since)}–#{as_of} · завершились: #{count}"]
+      end
+
+      # On a quiet board, when the hub thinks the position may be old.
+      def reminder(payload, level)
+        position_at = SignalBoardReading.optional_time(payload, "position_at")
+        return [] unless level == "quiet" && position_at
+
+        now = SignalBoardReading.time(payload, "as_of")
+        ["", "📍 Позицію оновлено #{SignalBoardReading.day(position_at, now)}. " \
+             "Якщо ви вже не там, натисніть «📍 Оновити позицію»."]
       end
 
       def active(entries)
@@ -51,9 +85,9 @@ module PrismPorter
         ["", "⏸ Давно без новин:", *quiet.first(MAX_LINES).map { |entry| quiet_line(entry) }]
       end
 
-      def footer(payload)
+      def footer(payload, level)
         count = ended(payload)
-        lines = count.positive? ? ["", "✔️ Завершились: #{count}"] : []
+        lines = level != "quiet" && count.positive? ? ["", "✔️ Завершились: #{count}"] : [""]
         lines << "Оновлено #{clock(SignalBoardReading.time(payload, 'as_of'))}"
       end
 

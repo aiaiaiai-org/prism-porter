@@ -42,7 +42,7 @@ class SignalBoardRendererTest < Minitest::Test
 
   def test_a_board_lists_objects_at_the_zone_then_the_oblast_then_the_quiet_ones
     expected = <<~TEXT.chomp
-      📡 Повідомлення джерел · з 03:27
+      🔴 Загроза у вашій зоні · з 03:27
 
       🔴 ☄️ балістика ×1 — Київ · 03:31
       🔴 ✈️ реактивні шахеди ×3 — Чернігів → Київ · 03:29
@@ -57,10 +57,37 @@ class SignalBoardRendererTest < Minitest::Test
     assert_equal expected, render("signal.board", board)
   end
 
-  def test_a_closed_board_says_the_reports_ended_and_never_that_it_is_safe
+  def test_a_quiet_board_stays_says_no_new_reports_and_never_that_it_is_safe
     text = render("signal.board", board("entries" => [], "quiet" => [], "as_of" => "2026-10-27T03:10:00Z"))
-    assert_equal "📡 Повідомлення джерел · 03:27–05:10\nАктивних повідомлень немає · завершились: 2", text
+    expected = <<~TEXT.chomp
+      ⚪ Нових повідомлень про загрози немає
+
+      Остання атака: 03:27–05:10 · завершились: 2
+
+      Оновлено 05:10
+    TEXT
+    assert_equal expected, text
     refute_match(/чист|безпечн|відбій/i, text)
+  end
+
+  def test_a_board_before_any_attack_is_just_quiet
+    text = render("signal.board", board("since" => nil, "entries" => [], "quiet" => [], "ended" => 0))
+    assert_equal "⚪ Нових повідомлень про загрози немає\n\nОновлено 03:32", text
+  end
+
+  def test_the_headline_follows_the_level_the_hub_gives_or_the_entries
+    oblast = board("entries" => [board["entries"].last])
+    assert render("signal.board", oblast).start_with?("🟠 Загроза у вашій області · з 03:27")
+    assert render("signal.board", board("level" => "region")).start_with?("🟠 Загроза у вашій області")
+    assert_raises(PrismPorter::InvalidArtifact) { render("signal.board", board("level" => "calm")) }
+  end
+
+  def test_only_a_quiet_board_reminds_of_an_old_position
+    quiet = board("level" => "quiet", "entries" => [], "quiet" => [], "ended" => 0,
+                  "as_of" => "2026-10-27T10:00:00Z", "position_at" => "2026-10-24T09:34:00Z")
+    assert_includes render("signal.board", quiet),
+                    "📍 Позицію оновлено в суботу о 12:34. Якщо ви вже не там, натисніть «📍 Оновити позицію»."
+    refute_includes render("signal.board", board("position_at" => "2026-10-24T09:34:00Z")), "📍"
   end
 
   def test_a_long_board_is_bounded
@@ -133,7 +160,7 @@ class SignalBoardRendererTest < Minitest::Test
       out = StringIO.new
       input = StringIO.new(JSON.generate(request))
       assert_equal 0, PrismPorter::CLI.run(input: input, output: out, errors: StringIO.new)
-      assert_includes out.string, "Повідомлення джерел" if kind == "signal.board"
+      assert_includes out.string, "Загроза у вашій зоні" if kind == "signal.board"
     end
   end
 end
