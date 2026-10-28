@@ -1,8 +1,6 @@
 # © 2026 aiaiaiai · aiaiaiai.org
 # SPDX-License-Identifier: Apache-2.0
 
-require "date"
-
 module PrismPorter
   module Rendering
     # Renders one person's status line: how close the danger is, and what.
@@ -15,8 +13,6 @@ module PrismPorter
       LEVELS = %w[here region quiet].freeze
       QUIET = "⚪ Джерела затихли\nНових повідомлень для вашої зони немає.".freeze
       HEADLINES = { "here" => "🔴 Загроза у вашій зоні", "region" => "🟠 Загроза у вашій області" }.freeze
-      WEEKDAYS = ["в неділю", "в понеділок", "у вівторок", "в середу", "в четвер", "в пʼятницю",
-                  "в суботу"].freeze
 
       def render(envelope)
         payload = envelope.payload
@@ -52,26 +48,7 @@ module PrismPorter
         return QUIET if position_at.nil?
 
         now = r.time(payload, "as_of")
-        "#{QUIET}\n\n📍 Ви досі там само? Позицію оновлено #{day(position_at, now)} — /location"
-      end
-
-      # `в суботу о 12:34`, `вчора о 12:34`, or `24.10 о 12:34` when more than a week ago.
-      def day(at, now)
-        days = (local(now).to_date - local(at).to_date).to_i
-        "#{date(days, local(at))} о #{Presentation::KyivTime.clock(at)}"
-      end
-
-      def date(days, local_at)
-        case days
-        when 0 then "сьогодні"
-        when 1 then "вчора"
-        when 2..6 then WEEKDAYS.fetch(local_at.wday)
-        else local_at.strftime("%d.%m")
-        end
-      end
-
-      def local(time)
-        time.utc + (Presentation::KyivTime.offset_hours(time) * 3600)
+        "#{QUIET}\n\n📍 Ви досі там само? Позицію оновлено #{r.day(position_at, now)} — /location"
       end
     end
   end
