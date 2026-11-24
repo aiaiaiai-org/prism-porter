@@ -13,6 +13,7 @@ Current bootstrap supports:
 - **ephemeral** `identity.email-challenge.v1` rendering for client-scoped identity verification, link, sign-in, and recovery emails (not exposed through the serializable CLI/DeliveryIntent);
 - deterministic `signal.alert` rendering in Ukrainian for `prism-hub.signal-alert.v1`;
 - `signal.board` and `signal.status`: one person's live board of an attack and its status line;
+- transient PCM WAV to Ogg/Opus voice presentation via an explicit delivery profile;
 - lossless transport-neutral chunking with position metadata;
 - stable delivery idempotency keys;
 - typed fail-closed errors.
