@@ -26,6 +26,8 @@ jobs:
         run: git ls-files -z '*.rb' '*.gemspec' Rakefile | xargs -0 -r -n1 ruby -c
       - name: Style
         run: bundle exec rubocop
+      - name: Install voice codec tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Tests
         run: bundle exec rake test
       - name: Package
