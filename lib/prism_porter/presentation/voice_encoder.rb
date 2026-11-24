@@ -45,17 +45,21 @@ module PrismPorter
 
         PcmWave.validate!(wav)
         Dir.mktmpdir("prism-voice-") do |directory|
-          input = File.join(directory, "speech.wav")
-          output = File.join(directory, "voice.ogg")
-          File.binwrite(input, wav)
-          encode(input, output)
-          Voice.new(bytes: read_output(output))
+          Voice.new(bytes: convert(wav, directory))
         end
       rescue SystemCallError
         raise VoiceEncodingError, "voice encoding failed", cause: nil
       end
 
       private
+
+      def convert(wav, directory)
+        input = File.join(directory, "speech.wav")
+        output = File.join(directory, "voice.ogg")
+        File.binwrite(input, wav)
+        encode(input, output)
+        read_output(output)
+      end
 
       def arguments(input, output)
         ["-nostdin", "-v", "error", "-f", "wav", "-i", input,
@@ -65,8 +69,8 @@ module PrismPorter
       end
 
       def encode(input, output)
-        pid = Process.spawn(@ffmpeg, *arguments(input, output), in: File::NULL,
-                            out: File::NULL, err: File::NULL, rlimit_fsize: [MAX_BYTES + 1, MAX_BYTES + 1])
+        options = { in: File::NULL, out: File::NULL, err: File::NULL, rlimit_fsize: [MAX_BYTES + 1, MAX_BYTES + 1] }
+        pid = Process.spawn(@ffmpeg, *arguments(input, output), **options)
         status = Timeout.timeout(TIMEOUT_SECONDS) { Process.wait2(pid).last }
         raise VoiceEncodingError, "voice encoding failed" unless status.success?
       rescue Timeout::Error

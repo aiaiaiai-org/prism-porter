@@ -7,7 +7,9 @@ module PrismPorter
     module PcmWave
       MAX_BYTES = 60 * 1024 * 1024
       MAX_SECONDS = 300
+
       module_function
+
 
       def validate!(bytes)
         unless bytes.is_a?(String) && bytes.bytesize.between?(44, MAX_BYTES) &&
@@ -26,14 +28,18 @@ module PrismPorter
         while offset < bytes.bytesize
           type, size = chunk_header(bytes, offset)
           offset += 8
-          raise InvalidArtifact, "invalid WAV chunk" if offset + size > bytes.bytesize || chunks.key?(type)
-
-          chunks[type] = type == "fmt " ? bytes.byteslice(offset, size) : size
+          add_chunk(chunks, bytes, type, size, offset)
           offset += size + (size % 2)
         end
         raise InvalidArtifact, "invalid WAV padding" unless offset == bytes.bytesize
 
         chunks
+      end
+
+      def add_chunk(chunks, bytes, type, size, offset)
+        raise InvalidArtifact, "invalid WAV chunk" if offset + size > bytes.bytesize || chunks.key?(type)
+
+        chunks[type] = type == "fmt " ? bytes.byteslice(offset, size) : size
       end
 
       def chunk_header(bytes, offset)
@@ -51,15 +57,25 @@ module PrismPorter
         size = chunks["data"]
         raise InvalidArtifact, "missing WAV PCM data" unless format&.bytesize == 16 && size&.positive?
 
-        codec, channels, rate, byte_rate, alignment, bits = format.unpack("vvVVvv")
-        unless codec == 1 && bits == 16 && [1, 2].include?(channels) && rate.between?(8_000, 48_000) &&
-               alignment == channels * 2 && byte_rate == rate * alignment && (size % alignment).zero?
-          raise InvalidArtifact, "unsupported WAV PCM format"
-        end
-
+        byte_rate = pcm_byte_rate(format, size)
         raise InvalidArtifact, "speech duration exceeds limit" if size > byte_rate * MAX_SECONDS
 
         size.fdiv(byte_rate)
+      end
+
+      def pcm_byte_rate(format, size)
+        codec, channels, rate, byte_rate, alignment, bits = format.unpack("vvVVvv")
+        unless [codec, bits] == [1, 16] && [1, 2].include?(channels) && rate.between?(8_000, 48_000)
+          raise InvalidArtifact, "unsupported WAV PCM format"
+        end
+        validate_alignment(channels, rate, byte_rate, alignment, size)
+        byte_rate
+      end
+
+      def validate_alignment(channels, rate, byte_rate, alignment, size)
+        return if alignment == channels * 2 && byte_rate == rate * alignment && (size % alignment).zero?
+
+        raise InvalidArtifact, "unsupported WAV PCM format"
       end
     end
   end
